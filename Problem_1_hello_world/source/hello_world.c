@@ -101,10 +101,14 @@ int main(void)
 	updatePWM_dutyCycle(FTM_CHANNEL_SERVO, 0.0615);
 	FTM_SetSoftwareTrigger(FTM_SERVO, true);
 
+	printf("Input: speed, angle\n");
 	scanf("%d, %d", &speed, &angle);
 
-	dutyCycleSpeed = speed * 0.0185f/100.0f + 0.0815;
-	dutyCycleAngle = angle * 0.04f/100.0f + 0.104;
+	//dutyCycleSpeed = speed * 0.025f/100.0f + 0.0615;	//35 is stopped for this formula -> 7.025%
+	//dutyCycleAngle = angle * 0.025f/100.0f + 0.0615;	//70 is centred for this formula -> 7.9%
+
+	dutyCycleSpeed = speed * 0.0125f/100.0f + 0.07025;	//use these conversions
+	dutyCycleAngle = angle * 0.0125f/100.0f + 0.079;
 
 	updatePWM_dutyCycle(FTM_CHANNEL_DC_MOTOR, dutyCycleSpeed);
 	FTM_SetSoftwareTrigger(FTM_MOTOR, true);
