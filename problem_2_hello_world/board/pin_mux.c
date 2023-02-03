@@ -69,6 +69,10 @@ void BOARD_InitPins(void)
     /* Port E Clock Gate Control: Clock enabled */
     CLOCK_EnableClock(kCLOCK_PortE);
 
+
+    PORT_SetPinMux(PORTC, 1U, kPORT_MuxAlt4);
+    PORT_SetPinMux(PORTA, 6U, kPORT_MuxAlt3);
+
     /* PORTA2 (pin K6) is configured as TRACE_SWO */
     PORT_SetPinMux(BOARD_TRACE_SWO_PORT, BOARD_TRACE_SWO_PIN, kPORT_MuxAlt7);
 
