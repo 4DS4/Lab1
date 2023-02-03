@@ -32,8 +32,7 @@ void setupSPI()
 	masterConfig.whichCtar = kDSPI_Ctar0;
 	masterConfig.ctarConfig.baudRate = 500000;
 	masterConfig.ctarConfig.bitsPerFrame = 8U;
-	masterConfig.ctarConfig.cpol =
-			kDSPI_ClockPolarityActiveHigh;
+	masterConfig.ctarConfig.cpol = kDSPI_ClockPolarityActiveHigh;
 	masterConfig.ctarConfig.cpha = kDSPI_ClockPhaseFirstEdge;
 	masterConfig.ctarConfig.direction = kDSPI_MsbFirst;
 	masterConfig.ctarConfig.pcsToSckDelayInNanoSec = 1000000000U / 500000;
@@ -83,6 +82,25 @@ status_t SPI_read(uint8_t regAddress, uint8_t *rxBuff, uint8_t rxBuffSize)
 	free(masterRxData);
 	return ret;
 }
+
+status_t SPI_write(uint8_t regAddress, uint8_t value)
+{
+	dspi_transfer_t masterXfer;
+	uint8_t *masterTxData = (uint8_t*)malloc(3);
+	uint8_t *masterRxData = (uint8_t*)malloc(3);
+	masterTxData[0] = regAddress | 0x80; //Clear the most significant bit
+	masterTxData[1] = regAddress & 0x80; //Clear the least significant 7 bits
+	masterTxData[2] = value;
+	masterXfer.txData = masterTxData;
+	masterXfer.rxData = masterRxData;
+	masterXfer.dataSize = 3;
+	masterXfer.configFlags = kDSPI_MasterCtar0 | kDSPI_MasterPcs0 |
+			kDSPI_MasterPcsContinuous;
+	status_t ret = DSPI_MasterTransferBlocking(SPI1, &masterXfer);
+	free(masterTxData);
+	free(masterRxData);
+	return ret;
+}
 /*!
  * @brief Main function
  */
@@ -102,9 +120,9 @@ int main(void)
 	for(volatile int i = 0U; i < 1000000; i++)
 		__asm("NOP");
 
-	SPI_read(0x0D, &byte, 1);
-
-	printf("The expected value is 0xC7 and the read value 0x%X\n", byte);
+	SPI_write(0x09, 0x15);
+	SPI_read(0x09, &byte, 1);
+	printf("read value 0x%X\n", byte);
 
 	while (1)
 	{
