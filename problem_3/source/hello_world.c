@@ -36,6 +36,8 @@
 #define FTM_SERVO FTM0
 #define FTM_CHANNEL_SERVO kFTM_Chnl_3
 
+volatile char ch;
+volatile int new_char = 0;
 
 void setupPWM(ftm_chnl_t channel, FTM_Type* type)
 {
@@ -81,14 +83,24 @@ void updatePWM_dutyCycle(ftm_chnl_t channel, float dutyCycle)
 
 void setupUART()
 {
-uart_config_t config;
-UART_GetDefaultConfig(&config);
-config.baudRate_Bps = 57600;
-config.enableTx = true;
-config.enableRx = true;
-config.enableRxRTS = true;
-config.enableTxCTS = true;
-UART_Init(TARGET_UART, &config, CLOCK_GetFreq(kCLOCK_BusClk));
+	uart_config_t config;
+	UART_GetDefaultConfig(&config);
+	config.baudRate_Bps = 57600;
+	config.enableTx = true;
+	config.enableRx = true;
+	config.enableRxRTS = true;
+	config.enableTxCTS = true;
+	UART_Init(TARGET_UART, &config, CLOCK_GetFreq(kCLOCK_BusClk));
+	/******** Enable Interrupts *********/
+	UART_EnableInterrupts(TARGET_UART, kUART_RxDataRegFullInterruptEnable);
+	EnableIRQ(UART4_RX_TX_IRQn);
+}
+
+void UART4_RX_TX_IRQHandler()
+{
+	UART_GetStatusFlags(TARGET_UART);
+	ch = UART_ReadByte(TARGET_UART);
+	new_char = 1;
 }
 
 int main(void)
@@ -110,8 +122,10 @@ int main(void)
      *
     */
 
-    char ch[9];
+
     char txbuff[] = "Hello World\r\n";
+    char inputbuff [9];
+    int index = 0;
     int speed;
     int angle;
 	float dutyCycleSpeed;
@@ -133,20 +147,31 @@ int main(void)
 
     while (1)
     {
-    UART_ReadBlocking(TARGET_UART, &ch, 9);
-    PRINTF("%.9s\r\n", ch);
-    sscanf(ch, "%d,%d", &speed, &angle);
+    	if(new_char) {
+    		new_char = 0;
+    		PRINTF("%c\r\n", ch);
+    		if((ch != '\n')&&(ch != '\r')) {
+    			inputbuff[index++] = ch;
+    			printf("%s\r\n", inputbuff);
+    		}
+    		else {
+    			index = 0;
+				sscanf(inputbuff, "%d,%d", &speed, &angle);
 
-    printf("%d\n", speed);
-    printf("%d\n\n", angle);
-	dutyCycleSpeed = speed * 0.0125f/100.0f + 0.07025;	//use these conversions
-	dutyCycleAngle = angle * 0.0125f/100.0f + 0.079;
+				printf("%d\n", speed);
+				printf("%d\n\n", angle);
 
-	updatePWM_dutyCycle(FTM_CHANNEL_DC_MOTOR, dutyCycleSpeed);
-	FTM_SetSoftwareTrigger(FTM_MOTOR, true);
+				dutyCycleSpeed = speed * 0.0125f/100.0f + 0.07025;	//use these conversions
+				dutyCycleAngle = angle * 0.0125f/100.0f + 0.079;
 
-	updatePWM_dutyCycle(FTM_CHANNEL_SERVO, dutyCycleAngle);
-	FTM_SetSoftwareTrigger(FTM_SERVO, true);
+				updatePWM_dutyCycle(FTM_CHANNEL_DC_MOTOR, dutyCycleSpeed);
+				FTM_SetSoftwareTrigger(FTM_MOTOR, true);
+
+				updatePWM_dutyCycle(FTM_CHANNEL_SERVO, dutyCycleAngle);
+				FTM_SetSoftwareTrigger(FTM_SERVO, true);
+				inputbuff = "         ";
+    		}
+    	}
     }
 
 }
