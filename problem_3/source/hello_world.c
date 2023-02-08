@@ -169,7 +169,10 @@ int main(void)
 
 				updatePWM_dutyCycle(FTM_CHANNEL_SERVO, dutyCycleAngle);
 				FTM_SetSoftwareTrigger(FTM_SERVO, true);
-				inputbuff = "         ";
+//				for(int i = 0; i<9; i++){
+//					inputbuff[i] = ' ';
+//				}
+
     		}
     	}
     }

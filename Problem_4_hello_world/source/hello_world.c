@@ -119,9 +119,10 @@ int main(void)
 	/******* Delay *******/
 	for(volatile int i = 0U; i < 1000000; i++)
 		__asm("NOP");
-
-	SPI_write(0x09, 0x15);
-	SPI_read(0x09, &byte, 1);
+	SPI_read(0x0E, &byte, 1);
+	printf("read value 0x%X\n", byte);
+	SPI_write(0x0E, 0x15);
+	SPI_read(0x0E, &byte, 1);
 	printf("read value 0x%X\n", byte);
 
 	while (1)
